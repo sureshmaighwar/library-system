@@ -4,6 +4,9 @@ import { addDays, calculateFineCents, centsToAmount, LOAN_PERIOD_DAYS } from "@/
 
 export const MAX_ACTIVE_LOANS = 3;
 
+/** Members with this much unpaid fine, in dollars, cannot borrow. */
+export const UNPAID_FINE_LIMIT = 10;
+
 export const OPEN_LOAN_STATUSES = ["ACTIVE", "OVERDUE"] as const;
 
 type LoanDb = PrismaClient;
@@ -18,7 +21,9 @@ export class LoanError extends Error {
     | "FORBIDDEN"
     | "ALREADY_RENEWED"
     | "NOT_RENEWABLE"
-    | "COPIES_AVAILABLE";
+    | "COPIES_AVAILABLE"
+    | "UNPAID_FINES"
+    | "ALREADY_RETURNED";
 
   constructor(status: number, code: LoanError["code"], message: string) {
     super(message);
@@ -51,14 +56,38 @@ export async function markOverdueLoans(db: Pick<PrismaClient, "loan">, now = new
 }
 
 /**
- * Borrow one copy inside a transaction.
- * The member row is locked so the 3-loan cap cannot be exceeded by concurrent requests.
- * Copies drop only when `availableCopies > 0`, so stock cannot go negative.
+ * Borrow one copy inside a single Prisma transaction.
+ *
+ * Concurrency:
+ * 1. `SELECT ... FROM items ... FOR UPDATE` locks that item row until this
+ *    transaction commits or rolls back. A second borrow of the same item waits.
+ * 2. When the waiter resumes, `availableCopies` is already 0 if the first
+ *    borrow took the last copy, so this request fails before creating a loan.
+ * 3. `updateMany` where `availableCopies > 0` is a second guard. If no row
+ *    matches, the copy count cannot go below zero.
+ * 4. Any thrown `LoanError` aborts the transaction, so the new loan and the
+ *    BORROWED stock log are not kept.
+ *
+ * Open loans are both ACTIVE and OVERDUE. The unique key is
+ * (userId, itemId, status), so an OVERDUE copy must still block a second loan
+ * of the same book. The member row is locked so two of that member's borrows
+ * cannot both pass the 3-loan cap.
  */
 export async function borrowItem(userId: string, itemId: string, db?: LoanDb): Promise<LoanRecord> {
   const client = db ?? (await import("@/lib/prisma")).prisma;
 
   return client.$transaction(async (tx) => {
+    const locked = await tx.$queryRaw<Array<{ id: string; availableCopies: number }>>`
+      SELECT "id", "availableCopies" FROM "items" WHERE "id" = ${itemId} FOR UPDATE
+    `;
+    const item = locked[0];
+    if (!item) {
+      throw new LoanError(404, "NOT_FOUND", "That item is not in the catalogue.");
+    }
+    if (item.availableCopies < 1) {
+      throw new LoanError(409, "NO_COPIES", "No copies are available right now.");
+    }
+
     await tx.$executeRaw`SELECT 1 FROM "users" WHERE "id" = ${userId} FOR UPDATE`;
     await markOverdueLoans(tx);
 
@@ -80,17 +109,17 @@ export async function borrowItem(userId: string, itemId: string, db?: LoanDb): P
       throw new LoanError(409, "DUPLICATE", "You already have this item on loan.");
     }
 
-    const item = await tx.item.findUnique({ where: { id: itemId } });
-    if (!item) {
-      throw new LoanError(404, "NOT_FOUND", "That item is not in the catalogue.");
-    }
-
-    const reserved = await tx.item.updateMany({
-      where: { id: itemId, availableCopies: { gt: 0 } },
-      data: { availableCopies: { decrement: 1 } },
+    const unpaid = await tx.loan.aggregate({
+      where: { userId, finePaid: false, status: "RETURNED" },
+      _sum: { fineAmount: true },
     });
-    if (reserved.count === 0) {
-      throw new LoanError(409, "NO_COPIES", "No copies are available right now.");
+    const unpaidTotal = Number(unpaid._sum.fineAmount ?? 0);
+    if (unpaidTotal >= UNPAID_FINE_LIMIT) {
+      throw new LoanError(
+        403,
+        "UNPAID_FINES",
+        "Pay your outstanding fines before borrowing another item.",
+      );
     }
 
     const borrowedAt = new Date();
@@ -115,6 +144,13 @@ export async function borrowItem(userId: string, itemId: string, db?: LoanDb): P
           quantity: 1,
         },
       });
+      const reserved = await tx.item.updateMany({
+        where: { id: itemId, availableCopies: { gt: 0 } },
+        data: { availableCopies: { decrement: 1 } },
+      });
+      if (reserved.count === 0) {
+        throw new LoanError(409, "NO_COPIES", "No copies are available right now.");
+      }
       await tx.reservation.updateMany({
         where: { userId, itemId, fulfilledAt: null },
         data: { fulfilledAt: borrowedAt },
@@ -130,8 +166,11 @@ export async function borrowItem(userId: string, itemId: string, db?: LoanDb): P
 }
 
 /**
- * Return a loan once. A second return is a no-op and does not add another copy.
- * The fine is calculated from the due date and saved on the loan (R-18).
+ * Return one open loan. OVERDUE is returnable so a late book can still be checked in.
+ * A loan that is already RETURNED throws, and availableCopies is not increased.
+ * updateMany only matches ACTIVE or OVERDUE, so a second concurrent return loses
+ * the race, gets the same error, and does not add a second copy (R-14).
+ * The fine is Math.ceil days past dueDate times $0.50, saved in the same transaction.
  */
 export async function returnLoan(
   actorId: string,
@@ -154,7 +193,7 @@ export async function returnLoan(
       throw new LoanError(403, "FORBIDDEN", "You can only return your own loans.");
     }
     if (existing.status === "RETURNED" || existing.returnedAt) {
-      return { loan: existing, idempotent: true };
+      throw new LoanError(409, "ALREADY_RETURNED", "Already returned.");
     }
 
     const returnedAt = new Date();
@@ -170,14 +209,7 @@ export async function returnLoan(
     });
 
     if (updated.count === 0) {
-      const current = await tx.loan.findUnique({
-        where: { id: loanId },
-        include: loanInclude,
-      });
-      if (!current) {
-        throw new LoanError(404, "NOT_FOUND", "Loan not found.");
-      }
-      return { loan: current, idempotent: true };
+      throw new LoanError(409, "ALREADY_RETURNED", "Already returned.");
     }
 
     await tx.item.update({

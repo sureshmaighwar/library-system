@@ -12,6 +12,10 @@ export async function POST(request: Request) {
       return apiError(401, "Sign in to borrow an item.");
     }
 
+    if (session.user.role !== "MEMBER") {
+      return apiError(403, "Only members can borrow items.");
+    }
+
     const parsed = borrowSchema.safeParse(await readJson(request));
     if (!parsed.success) {
       return apiError(400, parsed.error.issues[0]?.message ?? "Choose an item to borrow.");

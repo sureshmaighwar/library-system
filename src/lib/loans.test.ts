@@ -40,6 +40,14 @@ function createMemoryDb(seed?: { items?: MemoryItem[]; loans?: MemoryLoan[] }) {
 
   const tx = {
     $executeRaw: async () => 1,
+    $queryRaw: async (strings: TemplateStringsArray, ...values: unknown[]) => {
+      const sql = strings.join(" ");
+      if (!sql.includes("items")) {
+        return [];
+      }
+      const item = items.find((entry) => entry.id === values[0]);
+      return item ? [{ id: item.id, availableCopies: item.availableCopies }] : [];
+    },
     stockLog: {
       create: async () => ({ id: "log" }),
     },
@@ -145,6 +153,19 @@ function createMemoryDb(seed?: { items?: MemoryItem[]; loans?: MemoryLoan[] }) {
         }
         return { count: matches.length };
       },
+      aggregate: async ({
+        where,
+      }: {
+        where: { userId: string; finePaid: boolean; status: Status };
+      }) => {
+        const total = loans
+          .filter(
+            (loan) =>
+              loan.userId === where.userId && loan.finePaid === where.finePaid && loan.status === where.status,
+          )
+          .reduce((sum, loan) => sum + Number(loan.fineAmount), 0);
+        return { _sum: { fineAmount: total } };
+      },
     },
   };
 
@@ -209,6 +230,25 @@ describe("borrowItem", () => {
     expect(memory.items[0]?.availableCopies).toBe(2);
     expect(memory.loans).toHaveLength(1);
   });
+
+  it("rejects a borrow when unpaid fines reach $10", async () => {
+    const memory = createMemoryDb({
+      items: [{ id: "item-2", title: "Sapiens", author: "Harari", availableCopies: 2 }],
+      loans: [
+        {
+          ...openLoan("loan-fine", "item-1", "RETURNED"),
+          fineAmount: "10.00",
+          finePaid: false,
+        },
+      ],
+    });
+
+    await expect(borrowItem(member, "item-2", memory.db as never)).rejects.toMatchObject({
+      code: "UNPAID_FINES",
+    });
+    expect(memory.items[0]?.availableCopies).toBe(2);
+    expect(memory.loans).toHaveLength(1);
+  });
 });
 
 describe("returnLoan", () => {
@@ -219,12 +259,14 @@ describe("returnLoan", () => {
       loans: [{ ...openLoan("loan-1", "item-1", "ACTIVE"), dueDate }],
     });
 
-    const first = await returnLoan(member, "loan-1", false, memory.db as never);
-    const second = await returnLoan(member, "loan-1", false, memory.db as never);
+    const first = await returnLoan(member, "loan-1", true, memory.db as never);
 
     expect(first.idempotent).toBe(false);
     expect(Number(first.loan.fineAmount)).toBeGreaterThan(0);
-    expect(second.idempotent).toBe(true);
+    await expect(returnLoan(member, "loan-1", true, memory.db as never)).rejects.toMatchObject({
+      code: "ALREADY_RETURNED",
+      message: "Already returned.",
+    });
     expect(memory.items[0]?.availableCopies).toBe(1);
     expect(memory.loans[0]?.status).toBe("RETURNED");
   });
