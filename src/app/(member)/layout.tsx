@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { ErrorBoundary } from "@/components/features/ErrorBoundary";
 import { Navbar } from "@/components/layout/Navbar";
 import { getCurrentUser } from "@/lib/auth-utils";
 
@@ -23,7 +24,9 @@ async function MemberShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-full">
       <Navbar user={user} />
-      <div className="mx-auto w-full max-w-6xl p-6">{children}</div>
+      <div className="mx-auto w-full max-w-6xl p-6">
+        <ErrorBoundary>{children}</ErrorBoundary>
+      </div>
     </div>
   );
 }

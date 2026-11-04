@@ -1,22 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BookOpen } from "lucide-react";
 
+import { EmptyState } from "@/components/features/EmptyState";
 import { LoanCard } from "@/components/features/LoanCard";
+import { ListSkeleton } from "@/components/features/LoadingSkeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/lib/auth";
 import { calculateFineCents } from "@/lib/fines";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "My Loans" };
 
 export default function MyLoansPage() {
   return (
-    <Suspense fallback={<LoansSkeleton />}>
+    <Suspense fallback={<ListSkeleton />}>
       <MyLoans />
     </Suspense>
   );
@@ -61,13 +60,12 @@ async function MyLoans() {
         <h1 className="text-3xl font-semibold">My Loans</h1>
       </div>
       {loans.length === 0 ? (
-        <div className="grid justify-items-center gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-6 py-16 text-center shadow-sm">
-          <BookOpen className="size-12 text-indigo-300" />
-          <p className="text-lg font-medium">You haven&apos;t borrowed any books yet</p>
-          <Link href="/catalogue" className={cn(buttonVariants())}>
-            Browse the catalogue
-          </Link>
-        </div>
+        <EmptyState
+          variant="no-loans"
+          title="You haven't borrowed any books yet"
+          href="/catalogue"
+          actionLabel="Browse the catalogue"
+        />
       ) : (
         <Tabs defaultValue="active">
           <TabsList className="rounded-xl">
@@ -80,7 +78,7 @@ async function MyLoans() {
           </TabsList>
           <TabsContent value="active" className="mt-4 grid gap-4">
             {active.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No books are out right now.</p>
+              <EmptyState variant="no-loans" title="No books are out right now." description="Returned books stay in History." />
             ) : (
               active.map((loan) => (
                 <LoanCard
@@ -95,7 +93,7 @@ async function MyLoans() {
           </TabsContent>
           <TabsContent value="history" className="mt-4 grid gap-4">
             {history.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No returned loans yet.</p>
+              <EmptyState variant="no-loans" title="No returned loans yet." description="Books you bring back will be listed here." />
             ) : (
               history.map((loan) => <LoanCard key={loan.id} loan={loan} />)
             )}
@@ -106,12 +104,3 @@ async function MyLoans() {
   );
 }
 
-function LoansSkeleton() {
-  return (
-    <div className="grid gap-4">
-      <div className="h-10 w-48 animate-pulse rounded-xl bg-white" />
-      <div className="h-36 animate-pulse rounded-2xl bg-white" />
-      <div className="h-36 animate-pulse rounded-2xl bg-white" />
-    </div>
-  );
-}

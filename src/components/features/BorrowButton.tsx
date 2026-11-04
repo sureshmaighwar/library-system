@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { notify } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 
 export function BorrowButton({
@@ -28,10 +29,13 @@ export function BorrowButton({
     });
     const data = (await response.json()) as { error?: string };
     if (!response.ok) {
-      setError(data.error ?? "Could not borrow this item.");
+      const message = data.error ?? "Could not borrow this item.";
+      setError(message);
+      notify("error", "Could not borrow", message);
       setPending(false);
       return;
     }
+    notify("success", "Book borrowed", "It is now on My Loans.");
     router.push("/my-loans");
     router.refresh();
   }

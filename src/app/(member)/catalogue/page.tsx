@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { BookOpen, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
+import { EmptyState } from "@/components/features/EmptyState";
 import { ItemCard } from "@/components/features/ItemCard";
+import { CardSkeleton } from "@/components/features/LoadingSkeleton";
 import { Button } from "@/components/ui/button";
 import { listCatalogue, listCategories } from "@/lib/items";
 import { catalogueQuerySchema, type CatalogueQuery } from "@/lib/validations";
@@ -21,7 +23,7 @@ type SearchParams = {
 
 export default function CataloguePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
-    <Suspense fallback={<CatalogueSkeleton />}>
+    <Suspense fallback={<CardSkeleton />}>
       <CatalogueResults searchParams={searchParams} />
     </Suspense>
   );
@@ -114,14 +116,13 @@ async function CatalogueResults({ searchParams }: { searchParams: Promise<Search
       </form>
 
       {items.length === 0 ? (
-        <div className="grid justify-items-center gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-6 py-16 text-center shadow-sm">
-          <BookOpen className="size-12 text-indigo-300" />
-          <p className="text-lg font-medium">No books match those filters.</p>
-          <p className="text-sm text-muted-foreground">Try another title, or clear the filters.</p>
-          <Link href="/catalogue" className="text-sm font-medium text-primary">
-            Back to the full catalogue
-          </Link>
-        </div>
+        <EmptyState
+          variant="no-results"
+          title="No books match those filters."
+          description="Try another title, or clear the filters."
+          href="/catalogue"
+          actionLabel="Back to the full catalogue"
+        />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {items.map((item) => (
@@ -173,15 +174,3 @@ function FilterChip({ href, active, children }: { href: string; active: boolean;
   );
 }
 
-function CatalogueSkeleton() {
-  return (
-    <div className="grid gap-6">
-      <div className="h-40 animate-pulse rounded-2xl bg-indigo-100" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="h-64 animate-pulse rounded-2xl bg-white shadow-sm" />
-        ))}
-      </div>
-    </div>
-  );
-}

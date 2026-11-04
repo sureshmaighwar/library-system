@@ -179,11 +179,24 @@ function ToastIcon({ type }: { type: string | undefined }) {
   )
 }
 
+function toastTone(type: string | undefined) {
+  if (type === "success") {
+    return "rounded-2xl border-emerald-200 bg-emerald-50 text-emerald-950"
+  }
+  if (type === "error") {
+    return "rounded-2xl border-red-200 bg-red-50 text-red-950"
+  }
+  if (type === "info") {
+    return "rounded-2xl border-blue-200 bg-blue-50 text-blue-950"
+  }
+  return "rounded-2xl"
+}
+
 function ToastList() {
   const { toasts } = ToastPrimitive.useToastManager()
 
   return toasts.map((toastItem) => (
-    <Toast key={toastItem.id} toast={toastItem}>
+    <Toast key={toastItem.id} toast={toastItem} className={toastTone(toastItem.type)}>
       <ToastContent>
         <ToastIcon type={toastItem.type} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">

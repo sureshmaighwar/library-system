@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { notify } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 
 export function RenewButton({ loanId, disabled = false }: { loanId: string; disabled?: boolean }) {
@@ -21,9 +22,12 @@ export function RenewButton({ loanId, disabled = false }: { loanId: string; disa
     const data = (await response.json()) as { error?: string };
     setPending(false);
     if (!response.ok) {
-      setError(data.error ?? "Could not renew this loan.");
+      const message = data.error ?? "Could not renew this loan.";
+      setError(message);
+      notify("error", "Could not renew", message);
       return;
     }
+    notify("success", "Loan renewed", "The due date moved forward 14 days.");
     router.refresh();
   }
 

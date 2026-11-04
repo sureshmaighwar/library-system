@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { BorrowButton } from "@/components/features/BorrowButton";
+import { CardSkeleton } from "@/components/features/LoadingSkeleton";
 import { copyLabel, ItemCover } from "@/components/features/ItemCard";
 import { ReserveButton } from "@/components/features/ReserveButton";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ export const metadata: Metadata = { title: "Item" };
 
 export default function ItemPage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <Suspense fallback={<ItemSkeleton />}>
+    <Suspense fallback={<CardSkeleton count={1} />}>
       <ItemDetail params={params} />
     </Suspense>
   );
@@ -103,16 +104,3 @@ async function ItemDetail({ params }: { params: Promise<{ id: string }> }) {
   );
 }
 
-function ItemSkeleton() {
-  return (
-    <div className="grid gap-6 rounded-2xl bg-white p-6 md:grid-cols-[280px_1fr]">
-      <div className="h-80 animate-pulse rounded-2xl bg-indigo-50" />
-      <div className="grid content-start gap-3">
-        <div className="h-6 w-24 animate-pulse rounded-full bg-indigo-50" />
-        <div className="h-8 w-2/3 animate-pulse rounded-xl bg-indigo-50" />
-        <div className="h-4 w-1/3 animate-pulse rounded-xl bg-indigo-50" />
-        <div className="h-20 animate-pulse rounded-xl bg-indigo-50" />
-      </div>
-    </div>
-  );
-}

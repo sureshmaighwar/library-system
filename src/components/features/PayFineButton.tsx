@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { notify } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 
 export function PayFineButton({ loanId }: { loanId: string }) {
@@ -21,9 +22,12 @@ export function PayFineButton({ loanId }: { loanId: string }) {
     const data = (await response.json()) as { error?: string };
     setPending(false);
     if (!response.ok) {
-      setError(data.error ?? "Could not mark this fine paid.");
+      const message = data.error ?? "Could not mark this fine paid.";
+      setError(message);
+      notify("error", "Could not mark paid", message);
       return;
     }
+    notify("success", "Fine marked paid");
     router.refresh();
   }
 

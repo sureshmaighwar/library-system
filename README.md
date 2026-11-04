@@ -1,6 +1,6 @@
 # Library System
 
-A library desk for members and librarians. Members search the catalogue and borrow books. Librarians add titles, adjust stock, return loans, and record fines.
+A library desk for members and librarians. Members search the catalogue and borrow books. Librarians watch the shelf, manage titles, return loans, and record fines.
 
 Author: Suresh Kumar
 
@@ -8,7 +8,15 @@ Author: Suresh Kumar
 
 Members sign in, filter the catalogue, open an item, and borrow it. My Loans splits books that are still out from returned history, shows a live fine when a book is late, and allows one renewal before the due date.
 
-Librarians use the desk to see stock and overdue loans. Only a librarian can return a book. Returning saves the fine and puts one copy back.
+Librarians land on a dashboard that greets them by name and shows today's date. Four cards report total items, copies on loan, overdue loans, and low-stock titles. The low-stock list shows available and total copies and can add one copy with Restock. Recent activity lists the latest borrows and returns. Shortcuts open items, all loans, and overdue loans.
+
+The items desk searches by title, author, or ISBN, filters by category, and pages 8 titles at a time. Add and edit share one dialog. Restock asks for a quantity and a reason. Delete is refused while a title still has an open loan. When a delete is allowed, the stock log keeps the title and ISBN after the item row is gone, because `StockLog.itemId` is optional and clears on delete.
+
+The loans desk has All, Active, Returned, and Overdue tabs, plus a search for a member or a title. Returning an open loan asks for confirmation and shows the fine when the book is late. A returned loan with an unpaid fine can be marked paid.
+
+The overdue page counts late loans and totals the fines they currently owe. Each row shows the member, the item, the days overdue, and the current fine. Contact Member is a placeholder and does not send a message.
+
+Every save, borrow, return, renew, reserve, restock, and payment shows a toast. Success is green, an error is red, and info is blue. Toasts close after 3 seconds. Pages show a shimmer while they load, an empty state with a next step when a list is empty, and Try again when a page fails.
 
 ## Setup
 
@@ -35,7 +43,7 @@ npm run db:seed
 npm run dev
 ```
 
-`npx prisma db push` applies the current schema, including the Auth.js account tables. Open http://localhost:3000.
+`npx prisma db push` applies the current schema, including the Auth.js account tables. Those tables are not in the older migration files. Open http://localhost:3000.
 
 ## Test logins
 
@@ -46,6 +54,10 @@ npm run dev
 | member2@lib.com | member123 | Member |
 
 Passwords are stored as bcrypt hashes. The seed does not print the hash.
+
+## Access
+
+Librarian pages and librarian APIs are checked on the server. A member who calls one of those APIs gets 403. A signed-out API call gets 401. Opening a librarian page as a member sends them to the catalogue. Opening a protected page while signed out sends them to login.
 
 ## Loan rules
 

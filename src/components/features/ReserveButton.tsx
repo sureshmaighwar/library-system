@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { notify } from "@/components/providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 
 export function ReserveButton({ itemId }: { itemId: string }) {
@@ -21,9 +22,12 @@ export function ReserveButton({ itemId }: { itemId: string }) {
     const data = (await response.json()) as { error?: string };
     setPending(false);
     if (!response.ok) {
-      setError(data.error ?? "Could not reserve this item.");
+      const message = data.error ?? "Could not reserve this item.";
+      setError(message);
+      notify("error", "Could not reserve", message);
       return;
     }
+    notify("success", "Joined the queue");
     router.refresh();
   }
 
