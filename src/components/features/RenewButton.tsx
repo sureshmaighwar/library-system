@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 
-export function RenewButton({ loanId }: { loanId: string }) {
+export function RenewButton({ loanId, disabled = false }: { loanId: string; disabled?: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -29,8 +29,8 @@ export function RenewButton({ loanId }: { loanId: string }) {
 
   return (
     <div className="grid gap-2">
-      <Button type="button" variant="outline" onClick={onRenew} disabled={pending}>
-        {pending ? "Renewing…" : "Renew once"}
+      <Button type="button" variant="outline" onClick={onRenew} disabled={disabled || pending}>
+        {pending ? "Renewing…" : "Renew"}
       </Button>
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
     </div>
