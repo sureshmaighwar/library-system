@@ -1,35 +1,73 @@
 import Link from "next/link";
+import { BookOpen } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { ItemSummary } from "@/types";
 
-export function ItemCard({ item }: { item: ItemSummary }) {
-  const available = item.availableCopies > 0;
-  const low = available && item.availableCopies <= item.lowStockThreshold;
+export function ItemCover({
+  src,
+  title,
+  className,
+}: {
+  src: string | null;
+  title: string;
+  className?: string;
+}) {
+  if (src) {
+    return <img src={src} alt="" className={cn("h-full w-full object-cover", className)} />;
+  }
 
   return (
-    <Card className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm ring-0">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-3">
-          <CardTitle>
-            <Link href={`/items/${item.id}`} className="hover:text-primary">
-              {item.title}
-            </Link>
-          </CardTitle>
-          <Badge
-            variant={available ? "secondary" : "destructive"}
-            className={low ? "bg-amber-100 text-amber-800" : undefined}
-          >
-            {available ? `${item.availableCopies} available` : "Unavailable"}
-            {low ? " · low" : ""}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-1 text-sm text-muted-foreground">
-        <p>{item.author}</p>
-        <p>{item.category}</p>
-      </CardContent>
-    </Card>
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-100 via-white to-amber-50 text-indigo-300",
+        className,
+      )}
+      aria-hidden
+    >
+      <BookOpen className="size-10" />
+      <span className="sr-only">{title}</span>
+    </div>
+  );
+}
+
+function copyClass(availableCopies: number) {
+  if (availableCopies <= 0) {
+    return "text-red-500";
+  }
+  if (availableCopies <= 2) {
+    return "text-amber-600";
+  }
+  return "text-emerald-600";
+}
+
+export function copyLabel(availableCopies: number, totalCopies: number) {
+  if (availableCopies <= 0) {
+    return "Unavailable";
+  }
+  return `${availableCopies} of ${totalCopies} copies available`;
+}
+
+export function ItemCard({ item }: { item: ItemSummary }) {
+  return (
+    <Link
+      href={`/items/${item.id}`}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+    >
+      <div className="h-40">
+        <ItemCover src={item.coverImage} title={item.title} />
+      </div>
+      <div className="grid flex-1 gap-2 p-4">
+        <Badge variant="secondary" className="w-fit">
+          {item.category}
+        </Badge>
+        <h2 className="text-base font-semibold leading-snug group-hover:text-primary">{item.title}</h2>
+        <p className="text-sm text-muted-foreground">{item.author}</p>
+        <p className={cn("mt-auto text-sm font-medium", copyClass(item.availableCopies))}>
+          {copyLabel(item.availableCopies, item.totalCopies)}
+        </p>
+      </div>
+    </Link>
   );
 }

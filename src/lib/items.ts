@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 type StockChange = "ADDED_COPIES" | "LOST" | "DAMAGED";
 
-import type { ItemInput } from "@/lib/validations";
+import type { CatalogueQuery, ItemInput } from "@/lib/validations";
 
 const itemSelect = {
   id: true,
@@ -44,6 +44,46 @@ export async function listItems(query?: string) {
     orderBy: { title: "asc" },
     select: itemSelect,
   });
+}
+
+export async function listCategories() {
+  const prisma = (await import("@/lib/prisma")).prisma;
+  const rows = await prisma.item.findMany({
+    distinct: ["category"],
+    select: { category: true },
+    orderBy: { category: "asc" },
+  });
+  return rows.map((row) => row.category);
+}
+
+export async function listCatalogue(filters: CatalogueQuery) {
+  const prisma = (await import("@/lib/prisma")).prisma;
+  const where: Prisma.ItemWhereInput = {};
+  if (filters.search) {
+    where.OR = [
+      { title: { contains: filters.search, mode: "insensitive" } },
+      { author: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+  if (filters.category) {
+    where.category = filters.category;
+  }
+  if (filters.available) {
+    where.availableCopies = { gt: 0 };
+  }
+
+  const [total, items] = await Promise.all([
+    prisma.item.count({ where }),
+    prisma.item.findMany({
+      where,
+      orderBy: { title: "asc" },
+      skip: (filters.page - 1) * filters.limit,
+      take: filters.limit,
+      select: itemSelect,
+    }),
+  ]);
+
+  return { items, total, page: filters.page, limit: filters.limit };
 }
 
 export async function getItem(id: string) {

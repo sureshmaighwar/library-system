@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { apiError, isUniqueViolation, readJson } from "@/lib/http";
-import { createItem, listItems } from "@/lib/items";
-import { itemSchema } from "@/lib/validations";
+import { createItem, listCatalogue } from "@/lib/items";
+import { catalogueQuerySchema, itemSchema } from "@/lib/validations";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -11,9 +11,20 @@ export async function GET(request: Request) {
     return apiError(401, "Sign in to view the catalogue.");
   }
 
-  const query = new URL(request.url).searchParams.get("q") ?? undefined;
-  const items = await listItems(query);
-  return NextResponse.json({ items });
+  const url = new URL(request.url);
+  const parsed = catalogueQuerySchema.safeParse({
+    search: url.searchParams.get("search") ?? "",
+    category: url.searchParams.get("category") ?? "",
+    available: url.searchParams.get("available") ?? "",
+    page: url.searchParams.get("page") ?? "1",
+    limit: url.searchParams.get("limit") ?? "8",
+  });
+  if (!parsed.success) {
+    return apiError(400, parsed.error.issues[0]?.message ?? "Those filters are not valid.");
+  }
+
+  const result = await listCatalogue(parsed.data);
+  return NextResponse.json(result);
 }
 
 export async function POST(request: Request) {
