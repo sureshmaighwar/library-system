@@ -1,34 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { isLibrarianApi, isProtectedApi } from "@/lib/access";
 import { auth } from "@/lib/auth";
 
 const MEMBER_PAGES = ["/catalogue", "/items", "/my-loans"];
-
-const MEMBER_APIS = ["/api/borrow", "/api/renew", "/api/reserve", "/api/loans/my"];
-
-function isLibrarianApi(pathname: string, method: string) {
-  const itemRecord = /^\/api\/items\/[^/]+$/.test(pathname);
-  const restock = /^\/api\/items\/[^/]+\/restock$/.test(pathname);
-  return (
-    pathname.startsWith("/api/return") ||
-    pathname.startsWith("/api/fines") ||
-    pathname.startsWith("/api/dashboard") ||
-    pathname === "/api/loans/all" ||
-    pathname === "/api/loans/overdue" ||
-    pathname.startsWith("/api/items/stock") ||
-    (pathname === "/api/items" && method === "POST") ||
-    (itemRecord && (method === "PUT" || method === "DELETE")) ||
-    (restock && method === "POST")
-  );
-}
-
-function isProtectedApi(pathname: string, method: string) {
-  return (
-    pathname.startsWith("/api/items") ||
-    MEMBER_APIS.some((path) => pathname === path || pathname.startsWith(`${path}/`)) ||
-    isLibrarianApi(pathname, method)
-  );
-}
 
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;

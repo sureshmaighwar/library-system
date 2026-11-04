@@ -1,6 +1,24 @@
+import { AsyncLocalStorage } from "node:async_hooks";
+
 import { describe, expect, it } from "vitest";
 
-import { borrowItem, LoanError, returnLoan } from "@/lib/loans";
+import { borrowItem, returnLoan } from "@/lib/loans";
+
+const lockContext = new AsyncLocalStorage<Array<() => void>>();
+const itemLockTails = new Map<string, Promise<void>>();
+
+function acquireItemLock(id: string): Promise<() => void> {
+  const previous = itemLockTails.get(id) ?? Promise.resolve();
+  let release: () => void = () => undefined;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  itemLockTails.set(
+    id,
+    previous.then(() => held),
+  );
+  return previous.then(() => release);
+}
 
 type Status = "ACTIVE" | "RETURNED" | "OVERDUE";
 
@@ -45,7 +63,12 @@ function createMemoryDb(seed?: { items?: MemoryItem[]; loans?: MemoryLoan[] }) {
       if (!sql.includes("items")) {
         return [];
       }
-      const item = items.find((entry) => entry.id === values[0]);
+      const itemId = String(values[0]);
+      if (sql.includes("FOR UPDATE")) {
+        const release = await acquireItemLock(itemId);
+        lockContext.getStore()?.push(release);
+      }
+      const item = items.find((entry) => entry.id === itemId);
       return item ? [{ id: item.id, availableCopies: item.availableCopies }] : [];
     },
     stockLog: {
@@ -173,7 +196,16 @@ function createMemoryDb(seed?: { items?: MemoryItem[]; loans?: MemoryLoan[] }) {
     items,
     loans,
     db: {
-      $transaction: async <T,>(fn: (client: typeof tx) => Promise<T>) => fn(tx),
+      $transaction: async <T,>(fn: (client: typeof tx) => Promise<T>) => {
+        const releases: Array<() => void> = [];
+        try {
+          return await lockContext.run(releases, () => fn(tx));
+        } finally {
+          for (const release of releases) {
+            release();
+          }
+        }
+      },
     },
   };
 }
@@ -218,6 +250,21 @@ describe("borrowItem", () => {
     expect(memory.items.find((item) => item.id === "item-4")?.availableCopies).toBe(2);
   });
 
+  it("lets only one borrower take the last copy", async () => {
+    const memory = createMemoryDb({
+      items: [{ id: "item-1", title: "Rare Book", author: "A", availableCopies: 1 }],
+    });
+
+    const results = await Promise.allSettled([
+      borrowItem("user-1", "item-1", memory.db as never),
+      borrowItem("user-2", "item-1", memory.db as never),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(memory.items[0]?.availableCopies).toBe(0);
+    expect(memory.loans).toHaveLength(1);
+  });
+
   it("rejects a second open loan for the same item", async () => {
     const memory = createMemoryDb({
       items: [{ id: "item-1", title: "Clean Code", author: "Martin", availableCopies: 2 }],
@@ -253,7 +300,7 @@ describe("borrowItem", () => {
 
 describe("returnLoan", () => {
   it("saves a decimal fine and does not add another copy on a second return", async () => {
-    const dueDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const dueDate = new Date(Date.now() - (2 * 24 * 60 * 60 * 1000 - 60 * 1000));
     const memory = createMemoryDb({
       items: [{ id: "item-1", title: "Clean Code", author: "Martin", availableCopies: 0 }],
       loans: [{ ...openLoan("loan-1", "item-1", "ACTIVE"), dueDate }],
@@ -262,7 +309,7 @@ describe("returnLoan", () => {
     const first = await returnLoan(member, "loan-1", true, memory.db as never);
 
     expect(first.idempotent).toBe(false);
-    expect(Number(first.loan.fineAmount)).toBeGreaterThan(0);
+    expect(Number(first.loan.fineAmount)).toBe(1);
     await expect(returnLoan(member, "loan-1", true, memory.db as never)).rejects.toMatchObject({
       code: "ALREADY_RETURNED",
       message: "Already returned.",

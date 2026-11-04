@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 type StockChange = "ADDED_COPIES" | "LOST" | "DAMAGED";
 
@@ -57,8 +57,8 @@ export async function listCategories() {
   return rows.map((row) => row.category);
 }
 
-export async function listCatalogue(filters: CatalogueQuery) {
-  const prisma = (await import("@/lib/prisma")).prisma;
+/** Search, category, and availability filter for the member catalogue. */
+export function catalogueWhere(filters: CatalogueQuery): Prisma.ItemWhereInput {
   const where: Prisma.ItemWhereInput = {};
   if (filters.search) {
     where.OR = [
@@ -72,23 +72,13 @@ export async function listCatalogue(filters: CatalogueQuery) {
   if (filters.available) {
     where.availableCopies = { gt: 0 };
   }
-
-  const [total, items] = await Promise.all([
-    prisma.item.count({ where }),
-    prisma.item.findMany({
-      where,
-      orderBy: { title: "asc" },
-      skip: (filters.page - 1) * filters.limit,
-      take: filters.limit,
-      select: itemSelect,
-    }),
-  ]);
-
-  return { items, total, page: filters.page, limit: filters.limit };
+  return where;
 }
 
-export async function listLibrarianItems(filters: Pick<CatalogueQuery, "search" | "category" | "page" | "limit">) {
-  const prisma = (await import("@/lib/prisma")).prisma;
+/** Librarian search also matches ISBN. */
+export function librarianItemsWhere(
+  filters: Pick<CatalogueQuery, "search" | "category">,
+): Prisma.ItemWhereInput {
   const where: Prisma.ItemWhereInput = {};
   if (filters.search) {
     where.OR = [
@@ -100,14 +90,45 @@ export async function listLibrarianItems(filters: Pick<CatalogueQuery, "search" 
   if (filters.category) {
     where.category = filters.category;
   }
+  return where;
+}
+
+/** Page window used by both catalogues. Page 1 starts at the first row. */
+export function pageWindow(page: number, limit: number) {
+  return { skip: (page - 1) * limit, take: limit };
+}
+
+export async function listCatalogue(filters: CatalogueQuery) {
+  const prisma = (await import("@/lib/prisma")).prisma;
+  const where = catalogueWhere(filters);
+  const window = pageWindow(filters.page, filters.limit);
 
   const [total, items] = await Promise.all([
     prisma.item.count({ where }),
     prisma.item.findMany({
       where,
       orderBy: { title: "asc" },
-      skip: (filters.page - 1) * filters.limit,
-      take: filters.limit,
+      skip: window.skip,
+      take: window.take,
+      select: itemSelect,
+    }),
+  ]);
+
+  return { items, total, page: filters.page, limit: filters.limit };
+}
+
+export async function listLibrarianItems(filters: Pick<CatalogueQuery, "search" | "category" | "page" | "limit">) {
+  const prisma = (await import("@/lib/prisma")).prisma;
+  const where = librarianItemsWhere(filters);
+  const window = pageWindow(filters.page, filters.limit);
+
+  const [total, items] = await Promise.all([
+    prisma.item.count({ where }),
+    prisma.item.findMany({
+      where,
+      orderBy: { title: "asc" },
+      skip: window.skip,
+      take: window.take,
       select: itemSelect,
     }),
   ]);
@@ -159,8 +180,9 @@ export async function adjustStock(
   action: StockChange,
   quantity: number,
   reason?: string,
+  db?: PrismaClient,
 ) {
-  const prisma = (await import("@/lib/prisma")).prisma;
+  const prisma = db ?? (await import("@/lib/prisma")).prisma;
 
   return prisma.$transaction(async (tx) => {
     const item = await tx.item.findUnique({ where: { id: itemId } });
@@ -215,8 +237,8 @@ export async function adjustStock(
  * Update a catalogue title. Copy changes move available stock by the same
  * amount and cannot drop below the copies that are still on loan.
  */
-export async function updateItem(itemId: string, input: ItemInput, librarianId: string) {
-  const prisma = (await import("@/lib/prisma")).prisma;
+export async function updateItem(itemId: string, input: ItemInput, librarianId: string, db?: PrismaClient) {
+  const prisma = db ?? (await import("@/lib/prisma")).prisma;
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -270,8 +292,8 @@ export async function updateItem(itemId: string, input: ItemInput, librarianId: 
  * Remove a title that has no open loan. The delete log keeps the title and
  * ISBN after the item row is gone.
  */
-export async function deleteItem(itemId: string, librarianId: string) {
-  const prisma = (await import("@/lib/prisma")).prisma;
+export async function deleteItem(itemId: string, librarianId: string, db?: PrismaClient) {
+  const prisma = db ?? (await import("@/lib/prisma")).prisma;
 
   await prisma.$transaction(async (tx) => {
     const existing = await tx.item.findUnique({ where: { id: itemId } });
