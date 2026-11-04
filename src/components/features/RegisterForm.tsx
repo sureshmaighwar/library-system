@@ -14,7 +14,7 @@ export function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   async function onSubmit(values: RegisterInput) {
@@ -46,6 +46,18 @@ export function RegisterForm() {
         <Input id="password" type="password" autoComplete="new-password" {...form.register("password")} />
         {form.formState.errors.password ? (
           <p className="text-sm text-red-500">{form.formState.errors.password.message}</p>
+        ) : null}
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          {...form.register("confirmPassword")}
+        />
+        {form.formState.errors.confirmPassword ? (
+          <p className="text-sm text-red-500">{form.formState.errors.confirmPassword.message}</p>
         ) : null}
       </div>
       {error ? <p className="text-sm text-red-500">{error}</p> : null}

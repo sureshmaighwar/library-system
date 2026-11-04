@@ -2,8 +2,9 @@
 
 import bcrypt from "bcryptjs";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 
-import { signIn } from "@/lib/auth";
+import { auth, signIn, signOut } from "@/lib/auth";
 import { loginSchema, registerSchema } from "@/lib/validations";
 
 export async function loginAction(input: unknown): Promise<{ error?: string }> {
@@ -13,11 +14,14 @@ export async function loginAction(input: unknown): Promise<{ error?: string }> {
   }
 
   try {
-    await signIn("credentials", {
+    const result = await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/",
+      redirect: false,
     });
+    if (!result || result.error) {
+      return { error: "Email or password is incorrect." };
+    }
   } catch (error) {
     if (error instanceof AuthError) {
       return { error: "Email or password is incorrect." };
@@ -25,7 +29,11 @@ export async function loginAction(input: unknown): Promise<{ error?: string }> {
     throw error;
   }
 
-  return {};
+  const session = await auth();
+  if (session?.user.role === "LIBRARIAN") {
+    redirect("/librarian/dashboard");
+  }
+  redirect("/catalogue");
 }
 
 export async function registerAction(input: unknown): Promise<{ error?: string }> {
@@ -67,4 +75,8 @@ export async function registerAction(input: unknown): Promise<{ error?: string }
   }
 
   return {};
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/" });
 }

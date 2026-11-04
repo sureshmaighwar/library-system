@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { Navbar } from "@/components/layout/Navbar";
-import { auth } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth-utils";
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -15,14 +15,14 @@ export default function MemberLayout({ children }: { children: React.ReactNode }
 
 async function MemberShell({ children }: { children: React.ReactNode }) {
   await connection();
-  const session = await auth();
-  if (!session?.user) {
+  const user = await getCurrentUser();
+  if (!user) {
     redirect("/login");
   }
 
   return (
     <div className="min-h-full">
-      <Navbar user={session.user} />
+      <Navbar user={user} />
       <div className="mx-auto w-full max-w-6xl p-6">{children}</div>
     </div>
   );
