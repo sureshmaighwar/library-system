@@ -1,22 +1,27 @@
 # Library System
 
-A library desk for members and librarians. Members search the catalogue and borrow books. Librarians watch the shelf, manage titles, return loans, and record fines.
+A desk for a small library. Members find a book and take it home. Librarians watch the shelf, manage titles, and close loans.
 
-Author: Suresh Kumar
+**Author:** Suresh Kumar
 
-## What you can do
+## Features
 
-Members sign in, filter the catalogue, open an item, and borrow it. My Loans splits books that are still out from returned history, shows a live fine when a book is late, and allows one renewal before the due date.
+| | Members | Librarians |
+| --- | --- | --- |
+| Catalogue | Search, category filters, item detail, borrow | Same shelves, plus stock tools |
+| Loans | My Loans, live fine, one renewal | All, Active, Returned, and Overdue tabs |
+| Desk | Reservation queue when a title is out | Dashboard, restock, return, mark fine paid |
+| Feedback | Empty states and toasts | Same, plus Try again when a page fails |
 
-Librarians land on a dashboard that greets them by name and shows today's date. Four cards report total items, copies on loan, overdue loans, and low-stock titles. The low-stock list shows available and total copies and can add one copy with Restock. Recent activity lists the latest borrows and returns. Shortcuts open items, all loans, and overdue loans.
+Members filter the catalogue and open a cover-and-details page. My Loans splits books that are still out from returned history. A late book shows a live fine. One renewal is allowed before the due date.
 
-The items desk searches by title, author, or ISBN, filters by category, and pages 8 titles at a time. Add and edit share one dialog. Restock asks for a quantity and a reason. Delete is refused while a title still has an open loan. When a delete is allowed, the stock log keeps the title and ISBN after the item row is gone, because `StockLog.itemId` is optional and clears on delete.
+Librarians land on a dashboard with their name, today's date, and four counts: total items, copies on loan, overdue loans, and low-stock titles. Restock adds one copy from the low-stock list. Recent activity lists the latest borrows and returns. Shortcuts open items, all loans, and overdue loans.
 
-The loans desk has All, Active, Returned, and Overdue tabs, plus a search for a member or a title. Returning an open loan asks for confirmation and shows the fine when the book is late. A returned loan with an unpaid fine can be marked paid.
+The items desk searches by title, author, or ISBN, filters by category, and shows 8 titles per page. Add and edit share one dialog. Restock asks for a quantity and a reason. Delete is refused while a title still has an open loan. When a delete is allowed, the stock log keeps the title and ISBN after the item row is gone, because `StockLog.itemId` is optional and clears on delete.
 
-The overdue page counts late loans and totals the fines they currently owe. Each row shows the member, the item, the days overdue, and the current fine. Contact Member is a placeholder and does not send a message.
+The loans desk searches by member or title. Returning an open loan asks for confirmation and shows the fine when the book is late. A returned loan with an unpaid fine can be marked paid. The overdue page counts late loans, totals their current fines, and shows the days overdue. Contact Member is a placeholder and does not send a message.
 
-Every save, borrow, return, renew, reserve, restock, and payment shows a toast. Success is green, an error is red, and info is blue. Toasts close after 3 seconds. Pages show a shimmer while they load, an empty state with a next step when a list is empty, and Try again when a page fails.
+Toasts close after 3 seconds. Success is green, an error is red, and info is blue. Lists that are empty offer a next step.
 
 ## Setup
 
@@ -26,9 +31,13 @@ Every save, borrow, return, renew, reserve, restock, and payment shows a toast. 
 cp .env.example .env
 ```
 
-`DATABASE_URL` is the Postgres connection string. `NEXTAUTH_SECRET` signs the session. Auth.js also accepts `AUTH_SECRET`. `NEXTAUTH_URL` is the app origin, usually `http://localhost:3000`.
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string |
+| `NEXTAUTH_SECRET` | Signs the session. Auth.js also accepts `AUTH_SECRET` |
+| `NEXTAUTH_URL` | App origin, usually `http://localhost:3000` |
 
-2. Use Postgres at `localhost:5432`, which matches `.env.example`. The Compose file publishes its database on host port `5433` so it does not take that port.
+2. Use Postgres at `localhost:5432`, which matches `.env.example`.
 
 3. Install, sync the schema, and seed:
 
@@ -43,20 +52,29 @@ npm run dev
 
 ## Docker
 
-`docker compose up --build` starts Postgres, applies the schema with `prisma db push`, seeds the test accounts, and serves the app at http://localhost:3000. The database is published on host port `5433`. Inside the Compose network the app uses `db:5432`. Starting Compose again runs the seed again, which resets the demo books and loans.
+`docker compose up --build` starts Postgres, applies the schema, seeds the test accounts, and serves the app at http://localhost:3000.
 
 ```bash
 docker compose up --build
 ```
 
-Build the production image by itself. That image only starts Next.js. Schema and seed stay with the Compose setup service.
+The database is published on host port `5433` so it does not take `5432`. Inside the Compose network the app uses `db:5432`. Starting Compose again runs the seed again, which resets the demo books and loans.
+
+The production image only starts Next.js. Schema and seed stay with the Compose setup service.
 
 ```bash
 docker build -t library-system .
 docker run -p 3000:3000 --env-file .env library-system
 ```
 
-Pushes to `main` publish `DOCKERHUB_USERNAME/library-system` to Docker Hub. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` under the GitHub repository settings, Secrets and variables, Actions. The token is a Docker Hub access token.
+Pushes to `main` publish `sainsuresh/library-system` when these GitHub Actions secrets are set:
+
+| Secret | Value |
+| --- | --- |
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token, not the account password |
+
+Add them under the repository settings, Secrets and variables, Actions, on the **Secrets** tab.
 
 ## Test logins
 
@@ -70,7 +88,14 @@ Passwords are stored as bcrypt hashes. The seed does not print the hash.
 
 ## Access
 
-Librarian pages and librarian APIs are checked on the server. A member who calls one of those APIs gets 403. A signed-out API call gets 401. Opening a librarian page as a member sends them to the catalogue. Opening a protected page while signed out sends them to login.
+Librarian pages and librarian APIs are checked on the server.
+
+| Caller | Result |
+| --- | --- |
+| Signed-out API call | 401 |
+| Member calling a librarian API | 403 |
+| Member opening a librarian page | Redirect to the catalogue |
+| Signed-out visitor opening a protected page | Redirect to login |
 
 ## Loan rules
 
@@ -94,6 +119,8 @@ Borrow and return run inside `prisma.$transaction`.
 
 ## Scripts
 
-- `npm run dev` starts Next.js.
-- `npm test` runs the Vitest checks for fines, borrow limits, unpaid fines, and return.
-- `npm run db:seed` loads the test accounts and books.
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Starts Next.js |
+| `npm test` | Vitest: fines, concurrency, return, loan limits, role checks, stock, search, and validation |
+| `npm run db:seed` | Loads the test accounts and books |
