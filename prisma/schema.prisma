@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MEMBER
+  LIBRARIAN
+}
+
+enum LoanStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(MEMBER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  loans        Loan[]
+  stockLogs    StockLog[]
+  reservations Reservation[]
+
+  @@map("users")
+}
+
+model Item {
+  id                String   @id @default(cuid())
+  title             String
+  author            String
+  category          String
+  isbn              String   @unique
+  description       String?
+  coverImage        String?
+  totalCopies       Int
+  availableCopies   Int
+  lowStockThreshold Int      @default(2)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  loans        Loan[]
+  stockLogs    StockLog[]
+  reservations Reservation[]
+
+  @@map("items")
+}
+
+model Loan {
+  id         String     @id @default(cuid())
+  userId     String
+  itemId     String
+  borrowedAt DateTime   @default(now())
+  dueDate    DateTime
+  returnedAt DateTime?
+  fineAmount Decimal    @default(0) @db.Decimal(10, 2)
+  finePaid   Boolean    @default(false)
+  renewed    Boolean    @default(false)
+  status     LoanStatus @default(ACTIVE)
+
+  user User @relation(fields: [userId], references: [id])
+  item Item @relation(fields: [itemId], references: [id])
+
+  @@unique([userId, itemId, status])
+  @@index([dueDate])
+  @@index([status])
+  @@map("loans")
+}
+
+model Reservation {
+  id          String    @id @default(cuid())
+  userId      String
+  itemId      String
+  position    Int
+  createdAt   DateTime  @default(now())
+  fulfilledAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  item Item @relation(fields: [itemId], references: [id])
+
+  @@unique([userId, itemId])
+  @@map("reservations")
+}
+
+model StockLog {
+  id        String      @id @default(cuid())
+  itemId    String
+  changedBy String
+  action    String
+  quantity  Int
+  reason    String?
+  createdAt DateTime    @default(now())
+
+  item Item @relation(fields: [itemId], references: [id])
+  user User @relation(fields: [changedBy], references: [id])
+
+  @@map("stock_logs")
+}
