@@ -40,6 +40,11 @@ export const itemSchema = z.object({
   totalCopies: z.number().int().min(1, "Add at least one copy").max(500),
 });
 
+export const restockSchema = z.object({
+  quantity: z.number().int().min(1, "Add at least one copy").max(500),
+  reason: z.string().trim().min(1, "Enter a reason").max(200),
+});
+
 export const stockSchema = z.object({
   itemId: z.string().min(1),
   action: z.enum(["ADDED_COPIES", "LOST", "DAMAGED"]),
