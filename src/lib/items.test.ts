@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { adjustStock, deleteItem, updateItem, type ItemInput } from "@/lib/items";
+import { adjustStock, deleteItem, updateItem } from "@/lib/items";
+import type { ItemInput } from "@/lib/validations";
 
 type StockLog = {
   id: string;
