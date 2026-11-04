@@ -7,11 +7,18 @@ const MEMBER_PAGES = ["/catalogue", "/items", "/my-loans"];
 const MEMBER_APIS = ["/api/borrow", "/api/renew", "/api/reserve", "/api/loans/my"];
 
 function isLibrarianApi(pathname: string, method: string) {
+  const itemRecord = /^\/api\/items\/[^/]+$/.test(pathname);
+  const restock = /^\/api\/items\/[^/]+\/restock$/.test(pathname);
   return (
     pathname.startsWith("/api/return") ||
     pathname.startsWith("/api/fines") ||
+    pathname.startsWith("/api/dashboard") ||
+    pathname === "/api/loans/all" ||
+    pathname === "/api/loans/overdue" ||
     pathname.startsWith("/api/items/stock") ||
-    (pathname === "/api/items" && method === "POST")
+    (pathname === "/api/items" && method === "POST") ||
+    (itemRecord && (method === "PUT" || method === "DELETE")) ||
+    (restock && method === "POST")
   );
 }
 
@@ -67,7 +74,10 @@ export const config = {
     "/api/renew",
     "/api/reserve",
     "/api/loans/my",
+    "/api/loans/all",
+    "/api/loans/overdue",
     "/api/fines/:path*",
+    "/api/dashboard",
     "/api/items",
     "/api/items/:path*",
   ],
