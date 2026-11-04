@@ -28,11 +28,7 @@ cp .env.example .env
 
 `DATABASE_URL` is the Postgres connection string. `NEXTAUTH_SECRET` signs the session. Auth.js also accepts `AUTH_SECRET`. `NEXTAUTH_URL` is the app origin, usually `http://localhost:3000`.
 
-2. Start Postgres:
-
-```bash
-docker compose up -d
-```
+2. Use Postgres at `localhost:5432`, which matches `.env.example`. The Compose file publishes its database on host port `5433` so it does not take that port.
 
 3. Install, sync the schema, and seed:
 
@@ -44,6 +40,23 @@ npm run dev
 ```
 
 `npx prisma db push` applies the current schema, including the Auth.js account tables. Those tables are not in the older migration files. Open http://localhost:3000.
+
+## Docker
+
+`docker compose up --build` starts Postgres, applies the schema with `prisma db push`, seeds the test accounts, and serves the app at http://localhost:3000. The database is published on host port `5433`. Inside the Compose network the app uses `db:5432`. Starting Compose again runs the seed again, which resets the demo books and loans.
+
+```bash
+docker compose up --build
+```
+
+Build the production image by itself. That image only starts Next.js. Schema and seed stay with the Compose setup service.
+
+```bash
+docker build -t library-system .
+docker run -p 3000:3000 --env-file .env library-system
+```
+
+Pushes to `main` publish `DOCKERHUB_USERNAME/library-system` to Docker Hub. Add `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` under the GitHub repository settings, Secrets and variables, Actions. The token is a Docker Hub access token.
 
 ## Test logins
 

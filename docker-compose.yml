@@ -7,9 +7,44 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: library_db
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - library_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d library_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  setup:
+    build:
+      context: .
+      target: builder
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db
+    depends_on:
+      db:
+        condition: service_healthy
+    command: sh -c "npx prisma db push && npx tsx prisma/seed.ts"
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/library_db
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      AUTH_SECRET: ${NEXTAUTH_SECRET}
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
 
 volumes:
   library_pg:
