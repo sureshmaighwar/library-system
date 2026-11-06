@@ -45,51 +45,44 @@ export function LoanCard({
   const renewDisabled = loan.renewed || Boolean(timing?.overdue) || hasReservation;
   const fineLabel =
     loan.status === "RETURNED" ? formatFineAmount(loan.fineAmount) : formatFine(estimatedFineCents ?? 0);
-  const barClass =
-    timing?.tone === "overdue" ? "bg-red-500" : timing?.tone === "soon" ? "bg-amber-500" : "bg-emerald-500";
+  const edgeClass =
+    timing?.tone === "overdue" || loan.status === "OVERDUE"
+      ? "border-l-red-500"
+      : timing?.tone === "soon"
+        ? "border-l-amber-500"
+        : loan.status === "RETURNED"
+          ? "border-l-slate-300"
+          : "border-l-emerald-500";
+  const statusLabel = timing?.overdue ? "Overdue" : loan.status === "ACTIVE" ? "On time" : "Returned";
 
   return (
-    <div
-      className={cn(
-        "rounded-2xl border bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md",
-        timing?.overdue ? "border-red-400" : "border-[#e5e7eb]",
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="grid gap-1">
-          <h2 className="text-base font-semibold">{loan.item.title}</h2>
-          <p className="text-sm text-muted-foreground">{loan.item.author}</p>
+    <div className={cn("flex flex-col gap-4 rounded-2xl border border-slate-200 border-l-4 bg-white p-4 shadow-sm sm:flex-row sm:items-center", edgeClass)}>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-base font-semibold text-slate-900">{loan.item.title}</h2>
+          <Badge variant={timing?.overdue ? "destructive" : loan.status === "RETURNED" ? "secondary" : "default"}>{statusLabel}</Badge>
         </div>
-        <Badge variant={timing?.overdue ? "destructive" : loan.status === "RETURNED" ? "secondary" : "default"}>
-          {timing?.overdue ? "OVERDUE" : loan.status === "ACTIVE" ? "On time" : "Returned"}
-        </Badge>
-      </div>
-      <div className="mt-4 grid gap-2 text-sm">
-        <p>Borrowed {formatDate(loan.borrowedAt)}</p>
-        <p>Due {formatDate(loan.dueDate)}</p>
-        {loan.returnedAt ? <p>Returned {formatDate(loan.returnedAt)}</p> : null}
+        <p className="mt-1 text-sm text-slate-500">{loan.item.author}</p>
+        <p className="mt-2 text-sm text-slate-600">
+          Borrowed {formatDate(loan.borrowedAt)} · Due {formatDate(loan.dueDate)}
+          {loan.returnedAt ? ` · Returned ${formatDate(loan.returnedAt)}` : ""}
+        </p>
         {timing?.overdue ? (
-          <p className="font-medium text-red-600">
+          <p className="mt-1 text-sm font-medium text-red-600">
             {timing.daysOverdue} {timing.daysOverdue === 1 ? "day" : "days"} overdue · Fine {fineLabel}
           </p>
         ) : open ? (
-          <p className={timing?.tone === "soon" ? "text-amber-600" : "text-emerald-600"}>
+          <p className={cn("mt-1 text-sm font-medium", timing?.tone === "soon" ? "text-amber-600" : "text-emerald-600")}>
             {Math.max(timing?.daysLeft ?? 0, 0)} days left · Fine {fineLabel}
           </p>
         ) : (
-          <p>{loan.finePaid ? "Fine paid" : "Fine unpaid"} · {fineLabel}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {loan.finePaid ? "Fine paid" : "Fine unpaid"} · {fineLabel}
+          </p>
         )}
-        {loan.user ? <p className="text-muted-foreground">{loan.user.name}</p> : null}
+        {loan.user ? <p className="mt-1 text-sm text-slate-500">{loan.user.name}</p> : null}
       </div>
-      {timing ? (
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className={cn("h-full rounded-full transition-all", barClass)}
-            style={{ width: `${timing.progress}%` }}
-          />
-        </div>
-      ) : null}
-      <div className="mt-4 grid gap-2">
+      <div className="grid w-full gap-2 sm:w-40">
         {canReturn && open ? <ReturnButton loanId={loan.id} /> : null}
         {canRenew ? <RenewButton loanId={loan.id} disabled={renewDisabled} /> : null}
         {canMarkPaid && loan.status === "RETURNED" && !loan.finePaid ? <PayFineButton loanId={loan.id} /> : null}

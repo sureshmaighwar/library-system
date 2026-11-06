@@ -57,17 +57,18 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
         <AddItemButton categories={categories} />
       </div>
 
+      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <form action="/librarian/items" className="flex flex-wrap items-center gap-2">
         <input
           name="search"
           defaultValue={filters.search}
           placeholder="Search title, author, or ISBN"
-          className="h-10 min-w-56 flex-1 rounded-xl border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:border-primary"
+          className="h-10 min-w-56 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-indigo-500"
         />
         <select
           name="category"
           defaultValue={filters.category}
-          className="h-10 rounded-xl border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:border-primary"
+          className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-indigo-500"
         >
           <option value="">All categories</option>
           {categories.map((category) => (
@@ -89,7 +90,7 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
         />
       ) : (
         <>
-          <div className="hidden rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm md:block">
+          <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -113,7 +114,7 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
                     <TableCell className="font-medium">{item.title}</TableCell>
                     <TableCell>{item.author}</TableCell>
                     <TableCell>{item.category}</TableCell>
-                    <TableCell>{item.isbn}</TableCell>
+                    <TableCell className="font-mono text-slate-500">{item.isbn}</TableCell>
                     <TableCell>
                       <StockCount available={item.availableCopies} total={item.totalCopies} threshold={item.lowStockThreshold} />
                     </TableCell>
@@ -128,7 +129,7 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
 
           <div className="grid gap-3 md:hidden">
             {items.map((item) => (
-              <article key={item.id} className="grid gap-3 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+              <article key={item.id} className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex gap-3">
                   <div className="h-20 w-14 shrink-0 overflow-hidden rounded-lg">
                     <ItemCover src={item.coverImage} title={item.title} />
@@ -137,7 +138,7 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
                     <h2 className="font-medium">{item.title}</h2>
                     <p className="text-sm text-muted-foreground">{item.author}</p>
                     <p className="text-sm text-muted-foreground">{item.category}</p>
-                    <p className="text-sm">{item.isbn}</p>
+                    <p className="font-mono text-sm text-slate-500">{item.isbn}</p>
                     <StockCount available={item.availableCopies} total={item.totalCopies} threshold={item.lowStockThreshold} />
                   </div>
                 </div>
@@ -152,24 +153,25 @@ async function ItemsDesk({ searchParams }: { searchParams: Promise<SearchParams>
         <p className="text-muted-foreground">{total} items</p>
         <div className="flex items-center gap-2">
           {page > 1 ? (
-            <Link href={itemsHref(filters, page - 1)} className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
+            <Link href={itemsHref(filters, page - 1)} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
               Previous
             </Link>
           ) : (
-            <span className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-muted-foreground">Previous</span>
+            <span className="rounded-xl border border-slate-200 px-3 py-2 text-muted-foreground">Previous</span>
           )}
           <span>
             {page} / {pageCount}
           </span>
           {page < pageCount ? (
-            <Link href={itemsHref(filters, page + 1)} className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
+            <Link href={itemsHref(filters, page + 1)} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
               Next
             </Link>
           ) : (
-            <span className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-muted-foreground">Next</span>
+            <span className="rounded-xl border border-slate-200 px-3 py-2 text-muted-foreground">Next</span>
           )}
         </div>
       </div>
+      </section>
     </div>
   );
 }

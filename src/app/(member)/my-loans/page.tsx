@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { BookOpen } from "lucide-react";
 
 import { EmptyState } from "@/components/features/EmptyState";
 import { LoanCard } from "@/components/features/LoanCard";
@@ -54,11 +53,7 @@ async function MyLoans() {
   const reservedItems = new Set(reservations.map((reservation) => reservation.itemId));
 
   return (
-    <div className="grid gap-6">
-      <div className="flex items-center gap-3">
-        <BookOpen className="size-7 text-primary" />
-        <h1 className="text-3xl font-semibold">My Loans</h1>
-      </div>
+    <div className="grid gap-4">
       {loans.length === 0 ? (
         <EmptyState
           variant="no-loans"

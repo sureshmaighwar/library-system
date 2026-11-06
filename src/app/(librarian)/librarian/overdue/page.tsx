@@ -32,6 +32,7 @@ async function OverdueDesk() {
         </p>
       </div>
 
+      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="grid gap-4 sm:grid-cols-2">
         <section className="rounded-2xl border border-red-100 bg-white p-6 shadow-sm">
           <p className="text-sm text-muted-foreground">Total overdue</p>
@@ -71,6 +72,7 @@ async function OverdueDesk() {
           ))}
         </div>
       )}
+      </section>
     </div>
   );
 }

@@ -70,7 +70,7 @@ export function ItemForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="isbn">ISBN</Label>
-          <Input id="isbn" {...form.register("isbn")} />
+          <Input id="isbn" className="font-mono" {...form.register("isbn")} />
           {form.formState.errors.isbn ? (
             <p className="text-sm text-red-500">{form.formState.errors.isbn.message}</p>
           ) : null}

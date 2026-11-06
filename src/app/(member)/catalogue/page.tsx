@@ -72,88 +72,85 @@ async function CatalogueResults({ searchParams }: { searchParams: Promise<Search
   const pageCount = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="grid gap-6">
-      <section className="rounded-2xl bg-gradient-to-r from-indigo-100 via-white to-indigo-50 px-6 py-10 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">Discover Your Next Read</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Search by title or author, then filter the shelves.</p>
-        <form action="/catalogue" className="relative mx-auto mt-6 max-w-xl">
+    <div className="grid items-start gap-6 lg:grid-cols-[220px_1fr]">
+      <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <form action="/catalogue" className="grid gap-3">
           {filters.category ? <input type="hidden" name="category" value={filters.category} /> : null}
-          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            name="search"
-            defaultValue={filters.search}
-            placeholder="Search title or author"
-            className="h-12 w-full rounded-xl border border-[#e5e7eb] bg-white pr-4 pl-11 text-sm shadow-sm outline-none focus-visible:border-primary"
-          />
+          <label className="grid gap-1.5 text-sm font-medium text-slate-700">
+            Search
+            <span className="relative">
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" />
+              <input
+                name="search"
+                defaultValue={filters.search}
+                placeholder="Title or author"
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white pr-3 pl-9 text-sm font-normal outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-indigo-500"
+              />
+            </span>
+          </label>
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <input type="checkbox" name="available" value="true" defaultChecked={filters.available} />
+            Available only
+          </label>
+          <Button type="submit">Apply</Button>
         </form>
-      </section>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterChip href={catalogueHref(filters, { category: "" })} active={!filters.category}>
-          All
-        </FilterChip>
-        {categories.map((category) => (
-          <FilterChip
-            key={category}
-            href={catalogueHref(filters, { category })}
-            active={filters.category === category}
-          >
-            {category}
+        <div className="mt-5 grid gap-1">
+          <p className="px-3 pb-1 text-xs font-medium tracking-wide text-slate-400 uppercase">Category</p>
+          <FilterChip href={catalogueHref(filters, { category: "" })} active={!filters.category}>
+            All
           </FilterChip>
-        ))}
-      </div>
-
-      <form action="/catalogue" className="flex items-center gap-2 text-sm">
-        {filters.search ? <input type="hidden" name="search" value={filters.search} /> : null}
-        {filters.category ? <input type="hidden" name="category" value={filters.category} /> : null}
-        <label className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
-          <input type="checkbox" name="available" value="true" defaultChecked={filters.available} />
-          Show only available
-        </label>
-        <Button type="submit" variant="outline">
-          Apply
-        </Button>
-      </form>
-
-      {items.length === 0 ? (
-        <EmptyState
-          variant="no-results"
-          title="No books match those filters."
-          description="Try another title, or clear the filters."
-          href="/catalogue"
-          actionLabel="Back to the full catalogue"
-        />
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((item) => (
-            <ItemCard key={item.id} item={item} />
+          {categories.map((category) => (
+            <FilterChip key={category} href={catalogueHref(filters, { category })} active={filters.category === category}>
+              {category}
+            </FilterChip>
           ))}
         </div>
-      )}
+      </aside>
 
-      <div className="flex items-center justify-between gap-3 text-sm">
-        <p className="text-muted-foreground">
-          {total} {total === 1 ? "book" : "books"}
-        </p>
-        <div className="flex gap-2">
-          {page > 1 ? (
-            <Link href={catalogueHref(filters, { page: page - 1 })} className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
-              Previous
-            </Link>
-          ) : (
-            <span className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-muted-foreground">Previous</span>
-          )}
-          <span className="inline-flex items-center px-2">
-            {page} / {pageCount}
-          </span>
-          {page < pageCount ? (
-            <Link href={catalogueHref(filters, { page: page + 1 })} className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
-              Next
-            </Link>
-          ) : (
-            <span className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-muted-foreground">Next</span>
-          )}
+      <div className="grid gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">Catalogue</h1>
+            <p className="text-sm text-slate-500">
+              {total} {total === 1 ? "book" : "books"}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            {page > 1 ? (
+              <Link href={catalogueHref(filters, { page: page - 1 })} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                Previous
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-slate-200 px-3 py-2 text-slate-400">Previous</span>
+            )}
+            <span className="text-slate-500">
+              {page} / {pageCount}
+            </span>
+            {page < pageCount ? (
+              <Link href={catalogueHref(filters, { page: page + 1 })} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
+                Next
+              </Link>
+            ) : (
+              <span className="rounded-xl border border-slate-200 px-3 py-2 text-slate-400">Next</span>
+            )}
+          </div>
         </div>
+
+        {items.length === 0 ? (
+          <EmptyState
+            variant="no-results"
+            title="No books match those filters."
+            description="Try another title, or clear the filters."
+            href="/catalogue"
+            actionLabel="Back to the full catalogue"
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+              <ItemCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -165,8 +162,8 @@ function FilterChip({ href, active, children }: { href: string; active: boolean;
       href={href}
       className={
         active
-          ? "rounded-full bg-primary px-3 py-1.5 text-sm text-white"
-          : "rounded-full border border-[#e5e7eb] bg-white px-3 py-1.5 text-sm text-muted-foreground"
+          ? "rounded-xl bg-[#eef2ff] px-3 py-2 text-sm font-medium text-indigo-600"
+          : "rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900"
       }
     >
       {children}

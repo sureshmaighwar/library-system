@@ -48,7 +48,7 @@ export function EmptyState({
   const Icon = preset.icon;
 
   return (
-    <div className="grid justify-items-center gap-3 rounded-2xl border border-[#e5e7eb] bg-white px-6 py-16 text-center shadow-sm">
+    <div className="grid justify-items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
       <Icon className="size-12 text-indigo-300" />
       <p className="text-lg font-medium">{title ?? preset.title}</p>
       <p className="max-w-sm text-sm text-muted-foreground">{description ?? preset.description}</p>

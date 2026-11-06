@@ -35,13 +35,13 @@ function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
     <ToastPrimitive.Root
       data-slot="toast"
       className={cn(
-        "group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-none border bg-popover text-popover-foreground shadow-lg will-change-transform outline-none select-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom-right rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-md will-change-transform outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40",
         "[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]",
         "h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]",
         "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-['']",
         "data-expanded:h-(--toast-height) data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(var(--offset-y))]",
-        "data-limited:opacity-0 data-starting-style:[transform:translateY(150%)]",
-        "[&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]",
+        "data-limited:opacity-0 data-starting-style:[transform:translateX(120%)]",
+        "[&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateX(120%)]",
         "data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))]",
         "data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))]",
         "data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))]",
@@ -181,15 +181,18 @@ function ToastIcon({ type }: { type: string | undefined }) {
 
 function toastTone(type: string | undefined) {
   if (type === "success") {
-    return "rounded-2xl border-emerald-200 bg-emerald-50 text-emerald-950"
+    return "border-emerald-200 bg-emerald-50 text-emerald-950"
   }
   if (type === "error") {
-    return "rounded-2xl border-red-200 bg-red-50 text-red-950"
+    return "border-red-200 bg-red-50 text-red-950"
+  }
+  if (type === "warning") {
+    return "border-amber-200 bg-amber-50 text-amber-950"
   }
   if (type === "info") {
-    return "rounded-2xl border-blue-200 bg-blue-50 text-blue-950"
+    return "border-indigo-200 bg-indigo-50 text-indigo-950"
   }
-  return "rounded-2xl"
+  return ""
 }
 
 function ToastList() {

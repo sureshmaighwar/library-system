@@ -113,7 +113,7 @@ export function ItemFormModal({
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="ISBN" error={form.formState.errors.isbn?.message}>
-              <Input {...form.register("isbn")} />
+              <Input className="font-mono" {...form.register("isbn")} />
             </Field>
             <Field label="Copies" error={form.formState.errors.totalCopies?.message}>
               <Input type="number" min={1} {...form.register("totalCopies", { valueAsNumber: true })} />

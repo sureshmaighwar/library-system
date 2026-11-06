@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
-const jetbrainsMono = JetBrains_Mono({subsets:['latin'],variable:'--font-mono'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
+  variable: "--font-jetbrains",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -28,9 +28,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable)}>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ToastProvider>{children}</ToastProvider>
+    <html lang="en" className={cn("h-full", inter.variable, jetbrainsMono.variable)}>
+      <body className="flex min-h-full flex-col bg-background font-sans text-foreground antialiased">
+        <ToastProvider>
+          <div className="flex min-h-full flex-1 animate-in flex-col duration-200 fade-in">{children}</div>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { ErrorBoundary } from "@/components/features/ErrorBoundary";
-import { Navbar } from "@/components/layout/Navbar";
+import { AppShell } from "@/components/layout/AppShell";
 import { getCurrentUser } from "@/lib/auth-utils";
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {
@@ -22,11 +22,8 @@ async function MemberShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-full">
-      <Navbar user={user} />
-      <div className="mx-auto w-full max-w-6xl p-6">
-        <ErrorBoundary>{children}</ErrorBoundary>
-      </div>
-    </div>
+    <AppShell user={user}>
+      <ErrorBoundary>{children}</ErrorBoundary>
+    </AppShell>
   );
 }

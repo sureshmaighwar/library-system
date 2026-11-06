@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { BookOpen } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { ItemSummary } from "@/types";
 
@@ -32,14 +31,14 @@ export function ItemCover({
   );
 }
 
-function copyClass(availableCopies: number) {
+function availabilityPill(availableCopies: number) {
   if (availableCopies <= 0) {
-    return "text-red-500";
+    return "bg-red-50 text-red-600";
   }
   if (availableCopies <= 2) {
-    return "text-amber-600";
+    return "bg-amber-50 text-amber-700";
   }
-  return "text-emerald-600";
+  return "bg-emerald-50 text-emerald-700";
 }
 
 export function copyLabel(availableCopies: number, totalCopies: number) {
@@ -53,20 +52,17 @@ export function ItemCard({ item }: { item: ItemSummary }) {
   return (
     <Link
       href={`/items/${item.id}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
     >
-      <div className="h-40">
-        <ItemCover src={item.coverImage} title={item.title} />
+      <div className="h-[220px] overflow-hidden">
+        <ItemCover src={item.coverImage} title={item.title} className="transition-transform duration-200 ease-out group-hover:scale-105" />
       </div>
       <div className="grid flex-1 gap-2 p-4">
-        <Badge variant="secondary" className="w-fit">
-          {item.category}
-        </Badge>
-        <h2 className="text-base font-semibold leading-snug group-hover:text-primary">{item.title}</h2>
-        <p className="text-sm text-muted-foreground">{item.author}</p>
-        <p className={cn("mt-auto text-sm font-medium", copyClass(item.availableCopies))}>
+        <h2 className="text-base font-semibold leading-snug text-slate-900 group-hover:text-indigo-600">{item.title}</h2>
+        <p className="text-sm text-slate-500">{item.author}</p>
+        <span className={cn("mt-auto w-fit rounded-full px-2.5 py-1 text-xs font-medium", availabilityPill(item.availableCopies))}>
           {copyLabel(item.availableCopies, item.totalCopies)}
-        </p>
+        </span>
       </div>
     </Link>
   );

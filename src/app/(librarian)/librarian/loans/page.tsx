@@ -48,16 +48,17 @@ async function LoansDesk({ searchParams }: { searchParams: Promise<SearchParams>
         <p className="text-sm text-muted-foreground">Every borrow and return, newest first.</p>
       </div>
 
+      <section className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-wrap gap-2">
         {TABS.map((tab) => (
           <Link
             key={tab.status}
             href={loansHref(filters, { status: tab.status })}
             className={cn(
-              "rounded-xl px-3 py-2 text-sm",
+              "rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
               filters.status === tab.status
-                ? "bg-primary text-primary-foreground"
-                : "border border-[#e5e7eb] bg-white text-muted-foreground",
+                ? "bg-indigo-500 text-white shadow-sm"
+                : "border border-slate-200 bg-white text-slate-500 hover:-translate-y-px hover:text-indigo-600",
             )}
           >
             {tab.label}
@@ -71,14 +72,14 @@ async function LoansDesk({ searchParams }: { searchParams: Promise<SearchParams>
           name="search"
           defaultValue={filters.search}
           placeholder="Search member or title"
-          className="h-10 min-w-56 flex-1 rounded-xl border border-[#e5e7eb] bg-white px-3 text-sm outline-none focus-visible:border-primary"
+          className="h-10 min-w-56 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm outline-none focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-indigo-500"
         />
         <Button type="submit" variant="outline" className="rounded-xl">
           Search
         </Button>
       </form>
 
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+      <div>
         {loans.length === 0 ? (
           <EmptyState variant="no-results" href="/librarian/loans" actionLabel="Show all loans" />
         ) : (
@@ -139,6 +140,7 @@ async function LoansDesk({ searchParams }: { searchParams: Promise<SearchParams>
           </Table>
         )}
       </div>
+      </section>
     </div>
   );
 }
