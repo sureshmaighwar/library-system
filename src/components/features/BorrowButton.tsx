@@ -1,23 +1,28 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { notify } from "@/components/providers/ToastProvider";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function BorrowButton({
   itemId,
+  signedIn,
   disabled,
   reason,
 }: {
   itemId: string;
+  signedIn: boolean;
   disabled?: boolean;
   reason?: string | null;
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const callback = `/items/${itemId}`;
 
   async function onBorrow() {
     setPending(true);
@@ -38,6 +43,19 @@ export function BorrowButton({
     notify("success", "Book borrowed", "It is now on My Loans.");
     router.push("/my-loans");
     router.refresh();
+  }
+
+  if (!signedIn) {
+    return (
+      <div className="grid gap-2">
+        <Link href={`/login?callbackUrl=${encodeURIComponent(callback)}`} className={cn(buttonVariants())}>
+          Sign in to borrow
+        </Link>
+        <Link href={`/register?callbackUrl=${encodeURIComponent(callback)}`} className={cn(buttonVariants({ variant: "outline" }))}>
+          Create account
+        </Link>
+      </div>
+    );
   }
 
   return (

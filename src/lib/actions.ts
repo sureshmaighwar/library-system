@@ -7,7 +7,17 @@ import { redirect } from "next/navigation";
 import { auth, signIn, signOut } from "@/lib/auth";
 import { loginSchema, registerSchema } from "@/lib/validations";
 
-export async function loginAction(input: unknown): Promise<{ error?: string }> {
+function bookCallback(value: string | undefined) {
+  if (!value || !value.startsWith("/items/")) {
+    return null;
+  }
+  if (value.startsWith("//") || value.includes("\\") || value.includes("..") || value.includes("://")) {
+    return null;
+  }
+  return value;
+}
+
+export async function loginAction(input: unknown, callbackUrl?: string): Promise<{ error?: string }> {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
@@ -33,10 +43,10 @@ export async function loginAction(input: unknown): Promise<{ error?: string }> {
   if (session?.user.role === "LIBRARIAN") {
     redirect("/librarian/dashboard");
   }
-  redirect("/catalogue");
+  redirect(bookCallback(callbackUrl) ?? "/catalogue");
 }
 
-export async function registerAction(input: unknown): Promise<{ error?: string }> {
+export async function registerAction(input: unknown, callbackUrl?: string): Promise<{ error?: string }> {
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form and try again." };
@@ -65,7 +75,7 @@ export async function registerAction(input: unknown): Promise<{ error?: string }
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/catalogue",
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -74,7 +84,7 @@ export async function registerAction(input: unknown): Promise<{ error?: string }
     throw error;
   }
 
-  return {};
+  redirect(bookCallback(callbackUrl) ?? "/catalogue");
 }
 
 export async function signOutAction() {

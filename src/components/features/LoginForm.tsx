@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { loginAction } from "@/lib/actions";
 import { loginSchema, type LoginInput } from "@/lib/validations";
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [error, setError] = useState<string | null>(null);
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -19,7 +19,7 @@ export function LoginForm() {
 
   async function onSubmit(values: LoginInput) {
     setError(null);
-    const result = await loginAction(values);
+    const result = await loginAction(values, callbackUrl);
     if (result?.error) {
       setError(result.error);
     }

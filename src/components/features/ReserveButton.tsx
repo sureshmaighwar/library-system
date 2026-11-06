@@ -1,15 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { notify } from "@/components/providers/ToastProvider";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-export function ReserveButton({ itemId }: { itemId: string }) {
+export function ReserveButton({ itemId, signedIn }: { itemId: string; signedIn: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const callback = `/items/${itemId}`;
 
   async function onReserve() {
     setPending(true);
@@ -29,6 +32,19 @@ export function ReserveButton({ itemId }: { itemId: string }) {
     }
     notify("success", "Joined the queue");
     router.refresh();
+  }
+
+  if (!signedIn) {
+    return (
+      <div className="grid gap-2">
+        <Link href={`/login?callbackUrl=${encodeURIComponent(callback)}`} className={cn(buttonVariants())}>
+          Sign in to borrow
+        </Link>
+        <Link href={`/register?callbackUrl=${encodeURIComponent(callback)}`} className={cn(buttonVariants({ variant: "outline" }))}>
+          Create account
+        </Link>
+      </div>
+    );
   }
 
   return (

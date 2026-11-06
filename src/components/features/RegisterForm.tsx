@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { registerAction } from "@/lib/actions";
 import { registerSchema, type RegisterInput } from "@/lib/validations";
 
-export function RegisterForm() {
+export function RegisterForm({ callbackUrl }: { callbackUrl?: string }) {
   const [error, setError] = useState<string | null>(null);
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -19,7 +19,7 @@ export function RegisterForm() {
 
   async function onSubmit(values: RegisterInput) {
     setError(null);
-    const result = await registerAction(values);
+    const result = await registerAction(values, callbackUrl);
     if (result?.error) {
       setError(result.error);
     }

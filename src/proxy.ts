@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { isLibrarianApi, isProtectedApi } from "@/lib/access";
 import { auth } from "@/lib/auth";
 
-const MEMBER_PAGES = ["/catalogue", "/items", "/my-loans"];
+const MEMBER_PAGES = ["/catalogue", "/my-loans"];
 
 export const proxy = auth((req) => {
   const { pathname } = req.nextUrl;
